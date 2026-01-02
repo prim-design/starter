@@ -18,4 +18,16 @@
       "service": "tt-server"
     }
   ]
+
+  // PRODUCTION: Uncomment and configure custom domain routing
+  // "routes": [
+  // 	{
+  // 		"pattern": "yourdomain.com",
+  // 		"custom_domain": true
+  // 	},
+  // 	{
+  // 		"pattern": "www.yourdomain.com",
+  // 		"custom_domain": true
+  // 	}
+  // ]
 }

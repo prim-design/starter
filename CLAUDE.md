@@ -73,6 +73,96 @@ pnpm --filter tt-server exec wrangler deploy
 pnpm --filter tt-client run build && pnpm --filter tt-client exec wrangler deploy
 ```
 
+### Production Deployment with Custom Domain
+
+When deploying to production with a custom domain (e.g., `yourdomain.com`), follow these steps:
+
+**1. Create D1 Database**
+```bash
+wrangler d1 create your-app-database
+# Copy the database_id to tt-server/wrangler.jsonc
+```
+
+**2. Set Required Secrets**
+```bash
+# Generate a secret: openssl rand -base64 32
+wrangler secret put BETTER_AUTH_SECRET --config tt-server/wrangler.jsonc
+
+# Set your domain (without protocol, e.g., "yourdomain.com")
+wrangler secret put APP_DOMAIN --config tt-server/wrangler.jsonc
+
+# Set the API base URL (e.g., "https://api.yourdomain.com")
+wrangler secret put BETTER_AUTH_URL --config tt-server/wrangler.jsonc
+
+# OAuth providers
+wrangler secret put GOOGLE_CLIENT_ID --config tt-server/wrangler.jsonc
+wrangler secret put GOOGLE_CLIENT_SECRET --config tt-server/wrangler.jsonc
+
+# Stripe (if using)
+wrangler secret put STRIPE_SECRET_KEY --config tt-server/wrangler.jsonc
+wrangler secret put STRIPE_WEBHOOK_SECRET --config tt-server/wrangler.jsonc
+```
+
+**3. Configure Custom Domains in wrangler.jsonc**
+
+In `tt-server/wrangler.jsonc`, add:
+```jsonc
+"routes": [
+  { "pattern": "api.yourdomain.com", "custom_domain": true }
+]
+```
+
+In `tt-client/wrangler.jsonc`, add:
+```jsonc
+"routes": [
+  { "pattern": "yourdomain.com", "custom_domain": true },
+  { "pattern": "www.yourdomain.com", "custom_domain": true }
+]
+```
+
+**4. Update OAuth Redirect URIs**
+
+In your OAuth provider dashboards, add the production callback URLs:
+- `https://api.yourdomain.com/auth/callback/google`
+- `https://api.yourdomain.com/auth/callback/discord`
+- etc.
+
+**5. Deploy**
+```bash
+# Apply migrations to production
+pnpm --filter tt-server run db:migrate:remote
+
+# Deploy server first
+pnpm --filter tt-server exec wrangler deploy
+
+# Build and deploy client
+pnpm --filter tt-client run build && pnpm --filter tt-client exec wrangler deploy
+```
+
+**Key Environment Variables**:
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `BETTER_AUTH_URL` | Full API URL with protocol | `https://api.yourdomain.com` |
+| `BETTER_AUTH_SECRET` | Random secret for auth | `openssl rand -base64 32` |
+| `APP_DOMAIN` | Your domain without protocol (custom domains only) | `yourdomain.com` |
+
+**Deployment modes:**
+
+1. **Workers.dev (no custom domain)**: Just set `BETTER_AUTH_URL` to your server worker URL
+   ```bash
+   wrangler secret put BETTER_AUTH_URL  # e.g., https://my-server.account.workers.dev
+   wrangler secret put BETTER_AUTH_SECRET
+   ```
+   CORS and trusted origins are automatically derived (assumes `*-server` / `*-client` naming).
+
+2. **Custom domain**: Set both `BETTER_AUTH_URL` and `APP_DOMAIN`
+   ```bash
+   wrangler secret put BETTER_AUTH_URL  # e.g., https://api.yourdomain.com
+   wrangler secret put APP_DOMAIN       # e.g., yourdomain.com
+   wrangler secret put BETTER_AUTH_SECRET
+   ```
+   This also enables cross-subdomain cookies for `api.` + `www.` subdomains.
+
 ### Testing
 
 ```bash
@@ -185,7 +275,9 @@ The client Worker (`tt-client/src/worker.ts`) proxies `/api/*` requests to the s
 
 **Server bindings** (`tt-server/wrangler.jsonc`):
 - `DB`: D1 database binding
-- Environment variables: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `BETTER_AUTH_SECRET`
+- Auth variables: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `APP_DOMAIN`
+- OAuth variables: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`
+- Stripe variables: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 
 **Client bindings** (`tt-client/wrangler.jsonc`):
 - `TT_SERVER`: Service binding to `tt-server` Worker
@@ -201,9 +293,14 @@ When creating a new project from this template:
 
 ### CORS
 
-- **Development**: CORS enabled in `tt-server/src/app.ts` for `http://localhost:3000`
-- **Production**: No CORS needed (service binding communication)
-- **Trusted origins**: Configured in `tt-server/src/lib/auth.ts` for BetterAuth
+- **Development**: CORS enabled for `http://localhost:3000` and `http://localhost:8787`
+- **Production**: CORS automatically configured via `APP_DOMAIN` env var
+- **Trusted origins**: Dynamically configured in `tt-server/src/lib/auth.ts` based on `APP_DOMAIN`
+
+When `APP_DOMAIN` is set (e.g., `yourdomain.com`), CORS and trusted origins automatically include:
+- `https://yourdomain.com`
+- `https://www.yourdomain.com`
+- `https://api.yourdomain.com`
 
 ### Environment Variables
 

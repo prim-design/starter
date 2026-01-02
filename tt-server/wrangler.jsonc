@@ -8,10 +8,34 @@
 		{
 			"binding": "DB",
 			"database_name": "tt-database",
-			"database_id": "51a434c1-0270-49ba-a47e-81dca87b5756"
+			// TODO: Create your D1 database with: wrangler d1 create <name>
+			// Then replace this ID with your actual database ID
+			"database_id": "YOUR_DATABASE_ID"
 		}
 	],
 	// For local development, create a .dev.vars file with your secrets
 	// For production, use: wrangler secret put VARIABLE_NAME
+	//
+	// Required secrets:
+	// - BETTER_AUTH_SECRET (generate with: openssl rand -base64 32)
+	// - BETTER_AUTH_URL (your server URL, e.g., https://my-server.account.workers.dev)
+	//
+	// For custom domains, also set:
+	// - APP_DOMAIN (e.g., yourdomain.com) - enables cross-subdomain cookies
+	//
+	// OAuth providers (as needed):
+	// - GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+	// - DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET
+	//
+	// Stripe (if using):
+	// - STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 	"vars": {}
+
+	// PRODUCTION: Uncomment and configure custom domain routing
+	// "routes": [
+	// 	{
+	// 		"pattern": "api.yourdomain.com",
+	// 		"custom_domain": true
+	// 	}
+	// ]
 }

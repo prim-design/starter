@@ -21,6 +21,9 @@ type Bindings = {
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   STRIPE_CONNECT_WEBHOOK_SECRET?: string;
+  // Production deployment config
+  BETTER_AUTH_URL?: string;
+  APP_DOMAIN?: string;
 };
 
 declare global {
@@ -29,29 +32,49 @@ declare global {
 
 const app = new Hono<{ Bindings: Bindings; Variables: AppVariables }>();
 
-// Enable CORS for development only
-// In production, service bindings don't need CORS (Worker-to-Worker communication)
-// In development, client (localhost:3000) and server (localhost:8787) are different origins
-app.use(
-  "*",
-  cors({
+// Build allowed origins based on APP_DOMAIN or BETTER_AUTH_URL env vars
+function getAllowedOrigins(appDomain?: string, betterAuthUrl?: string): string[] {
+  const origins = [
+    "http://localhost:3000",
+    "http://localhost:8787",
+  ];
+  if (appDomain) {
+    // Custom domain deployment
+    origins.push(
+      `https://${appDomain}`,
+      `https://www.${appDomain}`,
+      `https://api.${appDomain}`
+    );
+  } else if (betterAuthUrl) {
+    // Workers.dev deployment: derive origins from BETTER_AUTH_URL
+    origins.push(betterAuthUrl);
+    // Also allow client worker (assumes *-server -> *-client naming)
+    const clientUrl = betterAuthUrl.replace("-server", "-client");
+    if (clientUrl !== betterAuthUrl) {
+      origins.push(clientUrl);
+    }
+  }
+  return origins;
+}
+
+// Enable CORS - works with both service bindings and direct API calls
+// In production with custom domains, CORS is needed for cross-origin requests
+app.use("*", async (c, next) => {
+  const allowedOrigins = getAllowedOrigins(c.env.APP_DOMAIN, c.env.BETTER_AUTH_URL);
+  const corsMiddleware = cors({
     origin: (origin) => {
-      const allowedOrigins = [
-        "http://localhost:3000",
-        "http://localhost:8787",
-        "https://tt-client.nmwardlow.workers.dev",
-      ];
       return allowedOrigins.includes(origin)
         ? origin
-        : "https://tt-client.nmwardlow.workers.dev";
+        : allowedOrigins[0];
     },
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     exposeHeaders: ["Content-Length"],
     maxAge: 600,
     credentials: true,
-  }),
-);
+  });
+  return corsMiddleware(c, next);
+});
 
 // Health check
 app.get("/", (c) => c.json({ ok: true }));

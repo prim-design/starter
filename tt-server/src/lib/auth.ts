@@ -20,6 +20,9 @@ type AuthEnv = {
   BETTER_AUTH_SECRET?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
+  // Production deployment config
+  BETTER_AUTH_URL?: string; // e.g., https://api.example.com
+  APP_DOMAIN?: string; // e.g., example.com (without protocol)
 };
 
 // Cache auth instance per DB to avoid recreating on every request
@@ -55,16 +58,53 @@ export function getAuth(db: D1Database, env: AuthEnv) {
       })
     : undefined;
 
+  // Build trusted origins dynamically
+  const trustedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:8787",
+  ];
+
+  // Add production origins if APP_DOMAIN is configured (custom domain)
+  if (env.APP_DOMAIN) {
+    trustedOrigins.push(
+      `https://${env.APP_DOMAIN}`,
+      `https://www.${env.APP_DOMAIN}`,
+      `https://api.${env.APP_DOMAIN}`
+    );
+  } else if (env.BETTER_AUTH_URL) {
+    // For workers.dev deployment: derive origins from BETTER_AUTH_URL
+    // e.g., https://my-server.account.workers.dev -> trust that + client equivalent
+    trustedOrigins.push(env.BETTER_AUTH_URL);
+    // Also trust the client worker (assumes naming convention: *-server -> *-client)
+    const clientUrl = env.BETTER_AUTH_URL.replace("-server", "-client");
+    if (clientUrl !== env.BETTER_AUTH_URL) {
+      trustedOrigins.push(clientUrl);
+    }
+  }
+
+  // Determine if we're in production (custom domain configured)
+  const isProduction = !!env.APP_DOMAIN;
+
   const auth = betterAuth({
     database: {
       db: kysely,
       type: "sqlite",
     },
+    baseURL: env.BETTER_AUTH_URL,
     basePath: "/auth",
     secret: env.BETTER_AUTH_SECRET || "default-secret-change-me",
     emailAndPassword: {
       enabled: false,
     },
+    // Enable cross-subdomain cookies in production (e.g., app.example.com + api.example.com)
+    ...(isProduction && {
+      advanced: {
+        crossSubDomainCookies: {
+          enabled: true,
+          domain: `.${env.APP_DOMAIN}`,
+        },
+      },
+    }),
     user: {
       additionalFields: {
         username: {
@@ -81,12 +121,7 @@ export function getAuth(db: D1Database, env: AuthEnv) {
       },
     },
     socialProviders,
-    trustedOrigins: [
-      "http://localhost:3000",
-      "http://localhost:8787",
-      "https://tt-client.nmwardlow.workers.dev",
-      "https://tt-server.nmwardlow.workers.dev",
-    ],
+    trustedOrigins,
     plugins: [
       ...(stripeClient && env.STRIPE_WEBHOOK_SECRET
         ? [
