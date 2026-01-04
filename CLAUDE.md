@@ -250,6 +250,11 @@ The client Worker (`tt-client/src/worker.ts`) proxies `/api/*` requests to the s
 - **OAuth providers**: Google and Discord
 - **Schema generation**: Use `pnpm --filter tt-server auth:generate` to generate Prisma schema from BetterAuth config
 
+**Client-side route protection** uses TanStack Router's `beforeLoad` hook:
+- `__root.tsx` - Prefetches session via `ensureQueryData(sessionQueryOptions)` before any route renders
+- `_authenticated.tsx` - Layout route guard that checks `context.auth.isAuthenticated` and redirects to `/login` if not authenticated
+- Routes nested under `_authenticated/` automatically require authentication
+
 **Setup**:
 1. Create `tt-server/.dev.vars` with OAuth credentials (see `AUTH_SETUP.md`)
 2. For production, use `wrangler secret put VARIABLE_NAME`
