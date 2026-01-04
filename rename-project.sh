@@ -19,7 +19,7 @@ CLIENT_NAME="${PROJECT_NAME}-client"
 SERVER_NAME="${PROJECT_NAME}-server"
 SHARED_NAME="${PROJECT_NAME}-shared"
 # Convert to uppercase for binding name (e.g., MY_PROJECT_SERVER)
-BINDING_NAME="${PROJECT_NAME^^}_SERVER"
+BINDING_NAME="$(echo "$PROJECT_NAME" | tr '[:lower:]' '[:upper:]')_SERVER"
 
 echo "Renaming TT template to: $PROJECT_NAME"
 echo ""
@@ -139,7 +139,8 @@ sed -i.bak "s/tt-client/$CLIENT_NAME/g" CLAUDE.md
 sed -i.bak "s/tt-server/$SERVER_NAME/g" CLAUDE.md
 sed -i.bak "s/tt-shared/$SHARED_NAME/g" CLAUDE.md
 sed -i.bak "s/TT_SERVER/$BINDING_NAME/g" CLAUDE.md
-sed -i.bak "s/TT Template/${PROJECT_NAME^} Template/g" CLAUDE.md
+CAPITALIZED_NAME="$(echo "${PROJECT_NAME:0:1}" | tr '[:lower:]' '[:upper:]')${PROJECT_NAME:1}"
+sed -i.bak "s/TT Template/${CAPITALIZED_NAME} Template/g" CLAUDE.md
 rm CLAUDE.md.bak
 
 # Update AGENTS.md if it exists
