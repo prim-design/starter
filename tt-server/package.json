@@ -14,19 +14,19 @@
     "auth:generate": "better-auth generate"
   },
   "dependencies": {
-    "@better-auth/stripe": "^1.4.3",
-    "@prisma/adapter-d1": "^6.19.0",
-    "@prisma/client": "^6.19.0",
-    "better-auth": "^1.4.3",
-    "hono": "^4.10.7",
-    "kysely": "^0.28.8",
+    "@better-auth/stripe": "^1.4.10",
+    "@prisma/adapter-d1": "^6.19.1",
+    "@prisma/client": "^6.19.1",
+    "better-auth": "^1.4.10",
+    "hono": "^4.11.3",
+    "kysely": "^0.28.9",
     "kysely-d1": "^0.4.0",
     "stripe": "^19.3.1",
     "tt-shared": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.19.1",
-    "prisma": "^6.19.0",
-    "wrangler": "^4.51.0"
+    "@types/node": "^22.19.5",
+    "prisma": "^6.19.1",
+    "wrangler": "^4.58.0"
   }
 }

@@ -54,7 +54,7 @@ export function getAuth(db: D1Database, env: AuthEnv) {
   // Create Stripe client if configured
   const stripeClient = env.STRIPE_SECRET_KEY
     ? new Stripe(env.STRIPE_SECRET_KEY, {
-        apiVersion: "2025-02-24.acacia",
+        apiVersion: "2025-10-29.clover",
       })
     : undefined;
 
