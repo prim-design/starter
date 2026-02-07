@@ -24,7 +24,12 @@ const TanStackRouterDevtoolsPanel = import.meta.env.DEV
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async ({ context }) => {
     // Prefetch session so it's ready before any route renders
-    await context.queryClient.ensureQueryData(sessionQueryOptions);
+    // Use try-catch to allow UI to render even if backend is unreachable
+    try {
+      await context.queryClient.ensureQueryData(sessionQueryOptions);
+    } catch (error) {
+      console.error("Failed to prefetch session:", error);
+    }
   },
   component: () => (
     <>

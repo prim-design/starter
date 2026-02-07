@@ -183,6 +183,7 @@ if [ -d ".github/workflows" ]; then
   sed -i.bak "s/tt-server/$SERVER_NAME/g" .github/workflows/deploy-server.yml
   sed -i.bak "s/tt-shared/$SHARED_NAME/g" .github/workflows/deploy-server.yml
   sed -i.bak "s/tt-client/$CLIENT_NAME/g" .github/workflows/deploy-client.yml
+  sed -i.bak "s/tt-server/$SERVER_NAME/g" .github/workflows/deploy-client.yml
   sed -i.bak "s/tt-shared/$SHARED_NAME/g" .github/workflows/deploy-client.yml
   rm .github/workflows/*.bak 2>/dev/null || true
   echo "Done: GitHub workflows updated"

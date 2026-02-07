@@ -391,13 +391,6 @@ CI/CD workflows are pre-configured in `.github/workflows/`:
    |-------|----------|------------|
    | Account | Workers Scripts | Edit |
    | Account | D1 | Edit |
-   | Account | Account Settings | Read |
-   | Account | Workers KV Storage | Edit |
-   | Account | Workers R2 Storage | Edit |
-   | Account | Cloudflare Pages | Edit |
-   | Account | Workers Builds Configuration | Edit |
-   | Account | Workers Tail | Read |
-   | All zones | Workers Routes | Edit |
 
    - Click **Continue to summary** → **Create Token**
    - Copy the token (you won't see it again)
